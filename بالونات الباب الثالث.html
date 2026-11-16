@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تحدي العلوم - فرقعة البالونات (الكائنات الحية)</title>
+    <!-- مكتبة التقاط الشاشة للمشاركة -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #eaf1f8;
+            --card-bg: #ffffff;
+            --text-color: #0b3954;
+            --accent-green: #08803e;
+            --accent-orange: #d65a00;
+            --accent-blue: #0b63b6;
+            --balloon-green: #0a8f44;
+            --balloon-orange: #df5800;
+            --border-color: #d1d9e6;
+        }
+
+        body.dark-mode {
+            --bg-color: #121820;
+            --card-bg: #1c2430;
+            --text-color: #e6edf3;
+            --accent-green: #15934e;
+            --accent-orange: #e06d1e;
+            --accent-blue: #388bfd;
+            --balloon-green: #118140;
+            --balloon-orange: #c75204;
+            --border-color: #2c394b;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        #game-wrapper {
+            width: 100%;
+            max-width: 440px;
+            height: 96vh;
+            max-height: 860px;
+            background: var(--bg-color);
+            border: 2px solid var(--border-color);
+            border-radius: 26px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.18);
+            position: relative;
+        }
+
+        /* شاشات الحوار والمودال */
+        .modal-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 16px;
+        }
+
+        .modal-card {
+            background: var(--card-bg);
+            color: var(--text-color);
+            padding: 22px 18px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            max-height: 92vh;
+            overflow-y: auto;
+        }
+
+        .modal-card h2 { margin-bottom: 12px; font-size: 20px; }
+        .modal-card input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            margin-bottom: 14px;
+            font-size: 15px;
+            text-align: center;
+            outline: none;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        /* اختيار المستوى */
+        .level-select-container {
+            margin-bottom: 14px;
+            text-align: right;
+        }
+        .level-select-label {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .level-btn-group {
+            display: flex;
+            gap: 6px;
+        }
+        .level-btn {
+            flex: 1;
+            padding: 8px 4px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .level-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .btn-action {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 11px 18px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 6px;
+            transition: transform 0.1s;
+        }
+        .btn-action:active { transform: scale(0.97); }
+        .btn-secondary { background: var(--accent-blue); }
+
+        /* شاشة الانتظار */
+        .waiting-box {
+            background: linear-gradient(135deg, rgba(8,128,62,0.1), rgba(11,99,182,0.1));
+            border: 1.5px solid var(--accent-green);
+            border-radius: 16px;
+            padding: 16px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .advice-badge {
+            background: var(--accent-green);
+            color: white;
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .advice-text {
+            font-size: 14px;
+            line-height: 1.6;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        .loading-dots span {
+            display: inline-block;
+            font-size: 24px;
+            animation: blink 1.4s infinite both;
+            color: var(--accent-green);
+        }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+        .loading-dots span:nth-child(4) { animation-delay: 0.6s; }
+
+        @keyframes blink {
+            0%, 80%, 100% { opacity: 0; }
+            40% { opacity: 1; }
+        }
+
+        /* اللوحة العلوية */
+        .top-row-bar {
+            display: flex;
+            gap: 5px;
+            padding: 10px 12px 6px 12px;
+            align-items: center;
+        }
+        .speed-btn {
+            flex: 1;
+            padding: 6px 2px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+        .speed-btn.active {
+            background: var(--accent-green);
+            color: #fff;
+            border-color: var(--accent-green);
+        }
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        /* شريط المستوى أثناء اللعب */
+        .level-bar-live {
+            display: flex;
+            gap: 6px;
+            padding: 2px 12px;
+        }
+        .level-tag-btn {
+            flex: 1;
+            padding: 4px;
+            background: rgba(0,0,0,0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 10.5px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--text-color);
+            text-align: center;
+        }
+        .level-tag-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        /* شريط الحالة */
+        .status-row-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 12px 8px 12px;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .badge-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-skip {
+            background: var(--accent-orange);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 4px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* صندوق السؤال */
+        .question-container {
+            margin: 0 12px;
+            background: var(--card-bg);
+            border: 1.5px solid #bdd2e6;
+            border-radius: 16px;
+            padding: 16px 12px;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            min-height: 95px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .question-indicator {
+            position: absolute;
+            top: -10px;
+            right: 18px;
+            background: var(--accent-green);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .question-text {
+            font-size: 14px;
+            font-weight: 800;
+            text-align: center;
+            line-height: 1.45;
+            color: var(--text-color);
+        }
+
+        /* منطقة طيران البالونات */
+        .game-play-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px dashed #b9cbe0;
+            margin-top: 8px;
+        }
+        .balloon {
+            position: absolute;
+            width: 86px;
+            height: 115px;
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            font-size: 11.5px;
+            line-height: 1.25;
+            padding: 10px 6px 16px 6px;
+            cursor: pointer;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.25), inset 5px 5px 10px rgba(255,255,255,0.3), 0 6px 14px rgba(0,0,0,0.15);
+            transition: transform 0.15s;
+            word-break: break-word;
+            overflow: hidden;
+            z-index: 10;
+        }
+        .balloon.text-long {
+            font-size: 9.5px;
+            line-height: 1.15;
+            padding: 8px 4px 14px 4px;
+        }
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            width: 8px;
+            height: 5px;
+            background: inherit;
+            clip-path: polygon(50% 100%, 0 0, 100% 0);
+        }
+        .balloon::before {
+            content: '';
+            position: absolute;
+            bottom: -18px;
+            width: 2px;
+            height: 13px;
+            background: rgba(120, 140, 160, 0.6);
+        }
+        .balloon-pop {
+            transform: scale(1.35) !important;
+            opacity: 0 !important;
+            transition: transform 0.18s ease-out, opacity 0.18s ease-out !important;
+        }
+
+        /* بالونة الإجابة الصحيحة المتوهجة في المنتصف */
+        .center-glowing-balloon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1.25);
+            width: 130px;
+            height: 155px;
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            padding: 10px;
+            background: #08803e;
+            box-shadow: 0 0 25px 10px #25d366, inset -5px -5px 10px rgba(0,0,0,0.3), inset 5px 5px 10px rgba(255,255,255,0.4);
+            z-index: 80;
+            animation: pulseGlow 0.8s infinite alternate ease-in-out;
+            pointer-events: none;
+            word-break: break-word;
+        }
+        .center-glowing-balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            width: 10px;
+            height: 8px;
+            background: inherit;
+            clip-path: polygon(50% 100%, 0 0, 100% 0);
+        }
+        .center-glowing-balloon-label {
+            font-size: 10px;
+            background: rgba(0,0,0,0.4);
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+        }
+
+        @keyframes pulseGlow {
+            from {
+                transform: translate(-50%, -50%) scale(1.2);
+                box-shadow: 0 0 20px 6px #25d366, inset -5px -5px 10px rgba(0,0,0,0.3);
+            }
+            to {
+                transform: translate(-50%, -50%) scale(1.35);
+                box-shadow: 0 0 35px 14px #25d366, inset -5px -5px 10px rgba(0,0,0,0.2);
+            }
+        }
+
+        /* صندوق مراجعة الأخطاء مع الشرح البسيط */
+        .mistakes-review-box {
+            text-align: right;
+            margin: 12px 0;
+            background: rgba(0,0,0,0.03);
+            border-radius: 14px;
+            padding: 10px;
+            max-height: 180px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+        .mistakes-header {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--accent-orange);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .mistake-item {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 8px;
+            margin-bottom: 8px;
+            border-right: 3px solid #df5800;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .mistake-q {
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 3px;
+        }
+        .mistake-ans {
+            color: var(--accent-green);
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        .mistake-exp {
+            color: #555;
+            font-size: 11px;
+            background: rgba(0,0,0,0.03);
+            padding: 4px;
+            border-radius: 6px;
+        }
+        body.dark-mode .mistake-exp { color: #bbb; }
+
+        /* شريط المصمم */
+        .designer-bar {
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: #0b3954;
+        }
+        body.dark-mode .designer-bar { color: #58a6ff; }
+
+        /* أزرار المشاركة */
+        .social-share-group {
+            display: flex;
+            gap: 6px;
+            margin: 10px 0;
+        }
+        .btn-social {
+            flex: 1;
+            padding: 8px 3px;
+            border-radius: 10px;
+            border: none;
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-wa { background: #25D366; }
+        .btn-fb { background: #1877F2; }
+        .btn-shot { background: #6f42c1; }
+    </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <!-- شاشة البداية -->
+    <div id="start-modal" class="modal-screen">
+        <div class="modal-card">
+            <h2>🎈 تحدي الكائنات الحية</h2>
+            <p style="margin-bottom: 12px; font-size: 13px;">اكتب اسمك واختر المستوى التعليمي:</p>
+            <input type="text" id="player-name-input" placeholder="اكتب اسمك هنا..." autocomplete="off">
+            
+            <div class="level-select-container">
+                <span class="level-select-label">اختر مستوى التحدي:</span>
+                <div class="level-btn-group">
+                    <button class="level-btn active" id="btn-lvl-1" onclick="selectLevel(1)">م1: الخلايا</button>
+                    <button class="level-btn" id="btn-lvl-2" onclick="selectLevel(2)">م2: الصفات</button>
+                    <button class="level-btn" id="btn-lvl-3" onclick="selectLevel(3)">م3: الميكروبات</button>
+                </div>
+            </div>
+
+            <button class="btn-action" onclick="initiateGameFlow()">دخول التحدي 🚀</button>
+        </div>
+    </div>
+
+    <!-- شاشة الانتظار -->
+    <div id="wait-modal" class="modal-screen" style="display: none;">
+        <div class="modal-card">
+            <h3 style="font-size: 17px; margin-bottom: 6px;">جاري إعداد الأسئلة</h3>
+            <div class="loading-dots">
+                جاري بدء اللعبة
+                <span>.</span><span>.</span><span>.</span><span>.</span>
+            </div>
+            
+            <div class="waiting-box">
+                <span class="advice-badge">💡 نصيحة وقيمة اليوم</span>
+                <p class="advice-text" id="moral-advice">"طلب العلم عبادة، والصدق والأمانة هما زكاة العلم وبركته."</p>
+            </div>
+            <p style="font-size: 12px; opacity: 0.8;">استعن بالله وركز جيداً...</p>
+        </div>
+    </div>
+
+    <!-- شاشة نهاية المستوى ومراجعة الأخطاء -->
+    <div id="end-modal" class="modal-screen" style="display: none;">
+        <div class="modal-card" id="end-card-content">
+            <h2 id="end-title">انتهى التحدي! 🎉</h2>
+            <p id="motivational-phrase" style="font-size: 14px; color: var(--accent-orange); font-weight: bold; margin: 6px 0;"></p>
+            
+            <div style="background: rgba(0,0,0,0.05); padding: 8px; border-radius: 12px; margin-bottom: 8px;">
+                <p style="font-size: 13px;">البطل: <span id="final-player-name" style="font-weight: bold;"></span></p>
+                <p style="font-size: 15px; margin-top: 2px;">المستوى: <span id="final-level-name" style="font-weight: bold; color: var(--accent-blue);"></span></p>
+                <p style="font-size: 16px; margin-top: 2px;">النتيجة: <span id="final-score" style="color: var(--accent-green); font-weight: bold;">0</span> / 80</p>
+                <p style="font-size: 13px; margin-top: 3px; color: #d65a00;">🏆 أفضل نتيجة مسجلة: <span id="final-high-score" style="font-weight: bold;">0</span> / 80</p>
+            </div>
+
+            <!-- قائمة مراجعة الأخطاء -->
+            <div id="mistakes-container" class="mistakes-review-box" style="display: none;">
+                <div class="mistakes-header">🔍 مراجعة الأخطاء وتفسير الإجابات:</div>
+                <div id="mistakes-list"></div>
+            </div>
+
+            <p style="font-size: 12px; margin-bottom: 6px;">مشاركة النتيجة والإنجاز:</p>
+            <div class="social-share-group">
+                <button class="btn-social btn-wa" onclick="shareWhatsApp()">واتساب</button>
+                <button class="btn-social btn-fb" onclick="shareFacebook()">فيسبوك</button>
+                <button class="btn-social btn-shot" onclick="takeScreenshotAndShare()">📸 لقطة شاشة</button>
+            </div>
+
+            <button class="btn-action" onclick="retryCurrentLevel()">إعادة المستوى الحالي 🔁</button>
+            <button class="btn-action btn-secondary" id="btn-next-level" onclick="goToNextLevel()">المستوى التالي ⏭️</button>
+        </div>
+    </div>
+
+    <!-- الشريط العلوي للإعدادات -->
+    <div class="top-row-bar">
+        <button class="theme-toggle" onclick="toggleTheme()" title="تغيير المظهر">🌓</button>
+        <button class="speed-btn active" id="spd-slow" onclick="setSpeed(28, 'spd-slow')">بطيء (16ث)</button>
+        <button class="speed-btn" id="spd-mid" onclick="setSpeed(50, 'spd-mid')">متوسط</button>
+        <button class="speed-btn" id="spd-fast" onclick="setSpeed(75, 'spd-fast')">سريع</button>
+    </div>
+
+    <!-- شريط التبديل المباشر بين المستويات -->
+    <div class="level-bar-live">
+        <button class="level-tag-btn active" id="live-lvl-1" onclick="switchLevelLive(1)">م1: الخلايا</button>
+        <button class="level-tag-btn" id="live-lvl-2" onclick="switchLevelLive(2)">م2: الصفات</button>
+        <button class="level-tag-btn" id="live-lvl-3" onclick="switchLevelLive(3)">م3: الميكروبات</button>
+    </div>
+
+    <!-- شريط معلومات اللعبة والقلوب وأعلى نتيجة -->
+    <div class="status-row-bar">
+        <div class="badge-box" id="lives-display">❤️❤️❤️</div>
+        <div class="badge-box">👤 <span id="player-display">البطل</span></div>
+        <div class="badge-box">⭐ <span id="score-display">0</span></div>
+        <div class="badge-box" style="color: var(--accent-orange);">🏆 <span id="high-score-display">0</span></div>
+        <button class="btn-skip" id="btn-skip-q" onclick="skipQuestion()">تخطي (<span id="skips-display">3</span>)</button>
+    </div>
+
+    <!-- مربع السؤال -->
+    <div class="question-container">
+        <div class="question-indicator" id="q-counter">السؤال 1 / 8</div>
+        <div class="question-text" id="question-text">جاري تحضير التحدي...</div>
+    </div>
+
+    <!-- مساحة اللعبة وحركة البالونات -->
+    <div class="game-play-area" id="play-area"></div>
+
+    <!-- شريط المصمم -->
+    <div class="designer-bar">
+        مصمم اللعبة : أ/ عبد الرحمن عبد الله 📞 01021779644
+    </div>
+</div>
+
+<script>
+    // -------------------------------------------------------------
+    // بنك الـ 150 سؤالاً للوحدة الثالثة (الكائنات الحية: تركيبها وعملياتها)
+    // -------------------------------------------------------------
+    const questionBank = {
+        1: [ // الدرس الأول: الخلايا والحياة (50 سؤالاً)
+            { q: "تُعتبر ......... وحدة البناء والوظيفة في الكائن الحي.", options: ["الذرة", "الخلية", "الأنسجة", "الأعضاء"], answer: 1, exp: "الخلية هي أصغر وحدة بنائية في الكائن الحي وتقوم بالعمليات الحيوية اللازمة لاستمرار الحياة." },
+            { q: "أعلى مستوى في التسلسل التركيبي لجسم الكائن الحي هو .........", options: ["الجهاز", "العضو", "الكائن الحي", "النسيج"], answer: 2, exp: "التسلسل التركيبي يبدأ من الخلية وينتهي بأعلى مستوى وهو الكائن الحي." },
+            { q: "يتكون النسيج من مجموعة من ......... المتماثلة في الشكل والوظيفة.", options: ["الأعضاء", "الأجهزة", "الخلايا", "الجزيئات"], answer: 2, exp: "النسيج هو مجموعة خلايا متماثلة في الشكل والوظيفة." },
+            { q: "مجموعة الأنسجة المختلفة التي تعمل معًا لأداء وظيفة محددة تُكوّن .........", options: ["خلية", "عضوًا", "جهازًا", "كائنًا حيًا"], answer: 1, exp: "العضو يتكون من مجموعة أنسجة مختلفة تعمل معًا لأداء وظيفة محددة أو مجموعة وظائف." },
+            { q: "أي مما يلي يمثل التسلسل التركيبي الصحيح في جسم الإنسان من الأبسط إلى الأعلى؟", options: ["خلية ← عضو ← نسيج", "خلية ← نسيج ← عضو", "نسيج ← خلية ← عضو", "عضو ← نسيج ← خلية"], answer: 1, exp: "الترتيب الصحيح من الأبسط للأعلى: خلية ← نسيج ← عضو ← جهاز ← كائن حي." },
+            { q: "تتكون المادة من جزيئات تتكون بدورها من وحدات بنائية أبسط تُسمى .........", options: ["خلايا", "أنسجة", "ذرات", "عضيات"], answer: 2, exp: "الذرة هي وحدة بناء وتركيب المادة." },
+            { q: "تقوم الخلية بجميع العمليات الحيوية التالية اللازمة لاستمرار الحياة، عدا .........", options: ["التغذية", "التنفس", "النمو", "الانصهار"], answer: 3, exp: "التغذية والتنفس والنمو عمليات حيوية، بينما الانصهار تغير فيزيائي للمادة." },
+            { q: "أي من التراكيب التالية يوجد في كل من الخلية البكتيرية والنباتية والحيوانية؟", options: ["النواة", "البلاستيدات الخضراء", "الريبوسومات", "الجسم المركزي"], answer: 2, exp: "تشترك الخلايا الثلاث في وجود الغشاء البلازمي والسيتوبلازم والريبوسومات." },
+            { q: "تُحاط الخلية النباتية والخلية البكتيرية من الخارج بـ .........", options: ["غشاء نووي", "جدار خلوي", "جسم مركزي", "بلاستيدات خضراء"], answer: 1, exp: "الجدار الخلوي يحيط بالخلية النباتية والخلية البكتيرية ويغيب عن الحيوانية." },
+            { q: "العضية التي تميز الخلية الحيوانية وتنعدم في الخلية النباتية والبكتيرية هي .........", options: ["الميتوكوندريا", "الفجوة", "السنتروسوم", "جهاز جولجي"], answer: 2, exp: "الجسم المركزي (السنتروسوم) يوجد في الخلية الحيوانية فقط." },
+            { q: "تتميز الخلية النباتية عن الخلية الحيوانية بوجود .........", options: ["السيتوبلازم والنواة", "الجدار الخلوي والبلاستيدات", "الغشاء البلازمي", "الميتوكوندريا"], answer: 1, exp: "تتميز الخلية النباتية بالجدار الخلوي والبلاستيدات الخضراء وكبر حجم الفجوة." },
+            { q: "تتميز الفجوة في الخلية النباتية بأنها ......... مقارنة بالخلية الحيوانية.", options: ["صغيرة الحجم", "كبيرة الحجم", "منعدمة", "متعددة وصغيرة"], answer: 1, exp: "الفجوة في الخلية النباتية كبيرة الحجم بينما تكون صغيرة في الحيوانية." },
+            { q: "تُحاط المادة الوراثية بغشاء نووي في كل من .........", options: ["البكتيرية والحيوانية", "البكتيرية والنباتية", "الحيوانية والنباتية", "جميع أنواع الخلايا"], answer: 2, exp: "الخلايا الحيوانية والنباتية من حقيقيات النواة فمادتها الوراثية محاطة بغشاء نووي." },
+            { q: "يغيب عن الخلية البكتيرية كل مما يلي، عدا .........", options: ["الميتوكوندريا", "الشبكة الإندوبلازمية", "الغشاء البلازمي", "جهاز جولجي"], answer: 2, exp: "تحتوي الخلية البكتيرية على غشاء بلازمي وسيتوبلازم وريبوسومات وجدار خلوي." },
+            { q: "التركيب الذي يفصل مكونات الخلية الحيوانية عن الوسط المحيط بها هو .........", options: ["الجدار الخلوي", "الغشاء البلازمي", "الغشاء النووي", "السيتوبلازم"], answer: 1, exp: "الغشاء البلازمي يحيط بمكونات الخلية الحيوانية لعدم وجود جدار خلوي بها." },
+            { q: "ترتيب الكائنات الحية في مجموعات حسب أوجه التشابه والاختلاف بينها يُعرف بـ .........", options: ["التعضي", "التمايز", "التصنيف", "التخصص"], answer: 2, exp: "التصنيف هو ترتيب الكائنات الحية في مجموعات لتسهيل دراستها والتعرف عليها." },
+            { q: "تُصنف الكائنات الحية حسب عدد الخلايا المكونة لجسمها إلى .........", options: ["أوليات وحقيقيات النواة", "وحيدة وعديدة الخلايا", "نباتات وحيوانات", "ذاتية وغير ذاتية"], answer: 1, exp: "تنقسم الكائنات الحية حسب عدد الخلايا إلى وحيدة الخلية وعديدة الخلايا." },
+            { q: "جميع الكائنات التالية وحيدة الخلية، عدا .........", options: ["الأميبا", "البراميسيوم", "فطر عفن الخبز", "فطر الخميرة"], answer: 2, exp: "فطر عفن الخبز وفطر عيش الغراب من الفطريات عديدة الخلايا." },
+            { q: "أي مما يلي يُصنف ضمن البروتوزوا؟", options: ["البكتيريا واليوجلينا", "الأميبا والبراميسيوم", "الخميرة وعفن الخبز", "البكتيريا والأميبا"], answer: 1, exp: "الأميبا والبراميسيوم كائنات وحيدة الخلية حقيقية النواة تصنف ضمن البروتوزوا." },
+            { q: "تكون الخلية المكونة لجسم الكائنات وحيدة الخلية .........", options: ["متخصصة", "غير متخصصة", "متمايزة", "مرئية بالعين"], answer: 1, exp: "تكون غير متخصصة لأنها تقوم بمفردها بجميع العمليات الحيوية اللازمة للحياة." },
+            { q: "يُستخدم ......... في رؤية الكائنات الحية المجهرية الدقيقة.", options: ["التلسكوب", "العدسة اليدوية", "الميكروسكوب الضوئي", "المنظار الفلكي"], answer: 2, exp: "الكائنات وحيدة الخلية مجهرية لا تُرى بالعين المجردة وتُرى بالميكروسكوب الضوئي." },
+            { q: "من أمثلة الفطريات وحيدة الخلية .........", options: ["فطر عيش الغراب", "فطر عفن الخبز", "فطر الخميرة", "اليوجلينا"], answer: 2, exp: "فطر الخميرة من الفطريات وحيدة الخلية حقيقية النواة." },
+            { q: "من أمثلة الفطريات عديدة الخلايا .........", options: ["فطر الخميرة", "فطر عيش الغراب", "البراميسيوم", "الأميبا"], answer: 1, exp: "فطر عيش الغراب وفطر عفن الخبز من الفطريات عديدة الخلايا." },
+            { q: "تُصنف الكائنات الحية حسب تركيب النواة إلى .........", options: ["وحيدة وعديدة الخلايا", "أوليات وحقيقيات النواة", "نباتات وفطريات", "مجهرية وكبيرة"], answer: 1, exp: "حسب تركيب النواة تنقسم الكائنات إلى أوليات النواة وحقيقيات النواة." },
+            { q: "توجد المادة الوراثية في أوليات النواة حرة في .........", options: ["النواة", "السيتوبلازم", "الفجوة", "البلاستيدة"], answer: 1, exp: "أوليات النواة لا تحتوي على غشاء نووي فتوجد مادتها الوراثية في السيتوبلازم." },
+            { q: "جميع الكائنات أولية النواة تكون .........", options: ["عديدة الخلايا", "وحيدة الخلية", "كبيرة الحجم", "معقدة التركيب"], answer: 1, exp: "جميع أوليات النواة كائنات وحيدة الخلية بسيطة التركيب مثل البكتيريا." },
+            { q: "أي من الكائنات التالية يُعد من أوليات النواة؟", options: ["اليوجلينا", "البكتيريا", "فطر الخميرة", "الأميبا"], answer: 1, exp: "البكتيريا مثال رئيسي على الكائنات أولية النواة." },
+            { q: "تُعتبر اليوجلينا من الكائنات .........", options: ["وحيدة أولية النواة", "وحيدة حقيقية النواة", "عديدة أولية النواة", "عديدة حقيقية النواة"], answer: 1, exp: "اليوجلينا كائن وحيد الخلية ومادته الوراثية محاطة بغشاء نووي (حقيقية النواة)." },
+            { q: "لا تُصنف اليوجلينا ضمن البروتوزوا لأنها .........", options: ["أولية النواة", "تصنع غذاءها بنفسها", "عديدة الخلايا", "ليس لها غشاء بلازمي"], answer: 1, exp: "اليوجلينا تحتوي على بلاستيدات خضراء وتصنع غذاءها بنفسها ولها جدار خلوي مرن." },
+            { q: "يتشابه فطر عفن الخبز مع عيش الغراب في كل مما يلي، عدا أنهما من .........", options: ["الفطريات", "عديدة الخلايا", "حقيقيات النواة", "أوليات النواة"], answer: 3, exp: "كلاهما فطريات عديدة الخلايا ومن حقيقيات النواة وليست أوليات نواة." },
+            { q: "وجه الاختلاف بين فطر الخميرة وفطر عيش الغراب هو .........", options: ["نوع التغذية", "تركيب النواة", "عدد الخلايا", "وجود الغشاء النووي"], answer: 2, exp: "فطر الخميرة وحيد الخلية بينما فطر عيش الغراب عديد الخلايا." },
+            { q: "يتشابه الأسد مع نبات الفول في أنهما .........", options: ["من النباتات", "عديدة وحقيقية النواة", "ذاتية التغذية", "وحيدة الخلية"], answer: 1, exp: "كلاهما من حقيقيات النواة عديدة الخلايا ويختلفان في التصنيف (حيوان ونبات)." },
+            { q: "الخلايا الجذعية هي خلايا ......... لها القدرة على التحول إلى خلايا متخصصة.", options: ["متمايزة", "غير متمايزة", "أولية النواة", "ميتة"], answer: 1, exp: "الخلايا الجذعية خلايا غير متمايزة تتحول وتتمايز إلى جميع خلايا الجسم المتخصصة." },
+            { q: "تشبه الخلايا الجذعية في قدرتها على التشكّل إلى أنواع مختلفة بـ ......... في صناعة الفخار.", options: ["الماء", "طين الصلصال", "النار", "الزجاج"], answer: 1, exp: "كما يُشكّل طين الصلصال لتحف فخارية متنوعة، تتحول الخلايا الجذعية لخلايا متخصصة." },
+            { q: "من خصائص الخلايا الجذعية قدرتها على .........", options: ["تجديد نفسها", "التمايز لخلايا متخصصة", "البقاء دون انقسام", "(أ) و (ب) معًا"], answer: 3, exp: "تمتاز الخلايا الجذعية بقدرتها على تجديد نفسها بالانقسام والتمايز لخلايا متخصصة." },
+            { q: "تتمايز الخلايا الجذعية إلى خلايا ......... لتكوين أنسجة المخ.", options: ["عضلية", "كبدية", "عصبية", "معوية"], answer: 2, exp: "الخلايا العصبية هي الخلايا المتخصصة المكونة لأنسجة المخ." },
+            { q: "تُكوّن الخلايا المعوية الناتجة عن تمايز الخلايا الجذعية أنسجة .........", options: ["الكبد", "الأمعاء", "العضلات", "المخ"], answer: 1, exp: "الخلايا المعوية تشكل أنسجة الأمعاء." },
+            { q: "يُبنى النسيج العضلي من خلايا (ألياف) عضلية ......... لتتمكن من أداء وظيفة الانقباض والانبساط.", options: ["كروية", "طويلة", "مكعبة", "قرصية"], answer: 1, exp: "بناء النسيج العضلي من ألياف طويلة يمكنه من أداء وظيفة الانقباض والانبساط." },
+            { q: "تُستخدم الخلايا الجذعية في المجال الطبي في كل مما يلي، عدا .........", options: ["اختبار الأدوية", "إنتاج خلايا سليمة", "فهم حدوث الأمراض", "تخصيب التربة"], answer: 3, exp: "الخلايا الجذعية تُستخدم طبيًا لفهم الأمراض وإنتاج خلايا سليمة واختبار الأدوية." },
+            { q: "أثبتت التجارب العلمية فاعلية العلاج بالخلايا الجذعية في علاج الحالات التالية، عدا .........", options: ["مرض السكر", "الحروق", "فشل نخاع العظام", "كسور العظام البسيطة"], answer: 3, exp: "أثبتت التجارب فاعليتها في مرض السكر والحروق وفشل نخاع العظام وأمراض القلب." },
+            { q: "لا يمكن أن تكون أوليات النواة خلايا جذعية لأن أوليات النواة .........", options: ["عديدة الخلايا", "خلية واحدة غير متخصصة", "تحتوي نواة حقيقية", "كبيرة الحجم"], answer: 1, exp: "أوليات النواة خلية واحدة تقوم بكل الوظائف، أما الجذعية فتتمايز في حقيقيات النواة." },
+            { q: "الكائن الذي يتكون جسمه من خلية واحدة غير محاطة بغشاء نووي هو .........", options: ["البراميسيوم", "البكتيريا", "اليوجلينا", "الخميرة"], answer: 1, exp: "البكتيريا من أوليات النواة التي لا تحاط مادتها الوراثية بغشاء نووي." },
+            { q: "تختلف وظيفة الخلية في الكائنات عديدة الخلايا تبعًا لاختلاف .........", options: ["لونها", "تركيبها", "عدد أنويتها", "مكانها خارج الجسم"], answer: 1, exp: "تختلف وظيفة الخلية تبعًا لاختلاف تركيبها وشكلها." },
+            { q: "المادة الوراثية في خلية نبات الفول تكون محاطة بـ .........", options: ["جدار خلوي فقط", "غشاء نووي", "جسم مركزي", "أهداب"], answer: 1, exp: "نبات الفول من حقيقيات النواة فمادته الوراثية محاطة بغشاء نووي." },
+            { q: "أي مما يلي يُعد من الكائنات عديدة الخلايا وحقيقية النواة؟", options: ["الأميبا والبكتيريا", "الأسد والفول", "الخميرة واليوجلينا", "البراميسيوم والخميرة"], answer: 1, exp: "الأسد (حيوان) والفول (نبات) كلاهما من حقيقيات النواة عديدة الخلايا." },
+            { q: "تفتقر الخلية البكتيرية إلى وجود .........", options: ["السيتوبلازم", "الغشاء البلازمي", "النواة الحقيقية", "الجدار الخلوي"], answer: 2, exp: "البكتيريا من أوليات النواة وتفتقر لوجود نواة حقيقية محاطة بغشاء نووي." },
+            { q: "الكلمة غير المناسبة من بين (فطر الخميرة / اليوجلينا / البكتيريا / الأميبا) هي .........", options: ["فطر الخميرة", "اليوجلينا", "البكتيريا", "الأميبا"], answer: 2, exp: "البكتيريا من أوليات النواة، بينما الباقي كائنات وحيدة الخلية من حقيقيات النواة." },
+            { q: "العضيات المشتركة بين الخلية الحيوانية والنباتية والمفقودة في البكتيرية تشمل .........", options: ["الريبوسومات والسيتوبلازم", "الميتوكوندريا وجهاز جولجي", "الجدار الخلوي", "السنتروسوم"], answer: 1, exp: "توجد الميتوكوندريا وجهاز جولجي والشبكة الإندوبلازمية في الحيوانية والنباتية فقط." },
+            { q: "تُعرف الخلايا التي تؤدي كل منها وظيفة محددة في جسم الإنسان بالخلايا .........", options: ["الجذعية", "المتخصصة", "أولية النواة", "المجهرية"], answer: 1, exp: "الخلايا المتخصصة (المتمايزة) تؤدي كل منها وظيفة محددة في الكائنات عديدة الخلايا." },
+            { q: "عند زيارتك لقرية الفخار بالفسطاط، يُعد تشكيل الطين مثالاً توضيحيًا لعملية ......... الخلايا الجذعية.", options: ["انقسام", "تمايز", "تغذية", "تنفس"], answer: 1, exp: "تشكيل الطين يوضح تمايز الخلايا الجذعية وتحولها لأنواع مختلفة من الخلايا." }
+        ],
+        2: [ // الدرس الثاني: الصفات العامة للكائنات الحية (50 سؤالاً)
+            { q: "العمليات الحيوية التي تقوم بها الكائنات الحية لاستمرار حياتها وتميزها عن المواد غير الحية تُعرف بـ .........", options: ["التعضي", "الصفات العامة للكائنات", "التصنيف", "التمايز"], answer: 1, exp: "الصفات العامة للكائنات الحية هي العمليات الحيوية التي تميزها عن المواد غير الحية." },
+            { q: "تُصنف الكائنات الحية من حيث طريقة حصولها على الغذاء إلى كائنات .........", options: ["وحيدة وعديدة الخلايا", "أولية وحقيقية النواة", "ذاتية وغير ذاتية التغذية", "هوائية ولاهوائية"], answer: 2, exp: "تصنف الكائنات حسب التغذية إلى ذاتية التغذية (منتجة) وغير ذاتية التغذية (مستهلكة)." },
+            { q: "من أمثلة الكائنات ذاتية التغذية أولية النواة .........", options: ["الطحالب الخضراء", "النباتات", "بعض أنواع البكتيريا", "الفطريات"], answer: 2, exp: "بعض أنواع البكتيريا ذاتية التغذية وتنتمي لأوليات النواة." },
+            { q: "يُعتبر نبات الفول من الكائنات .........", options: ["المستهلكة", "المنتجة", "المحللة", "غير ذاتية التغذية"], answer: 1, exp: "نبات الفول ذاتي التغذية يصنع غذاءه بنفسه في البناء الضوئي لذا فهو كائن منتج." },
+            { q: "تتم عملية البناء الضوئي في النباتات الخضراء في .........", options: ["الميتوكوندريا", "البلاستيدات الخضراء", "جهاز جولجي", "الريبوسومات"], answer: 1, exp: "تحدث عملية البناء الضوئي داخل البلاستيدات الخضراء المحتوية على الكلوروفيل." },
+            { q: "تحدث عملية البناء الضوئي في النبات .........", options: ["ليلاً فقط", "نهارًا فقط في وجود الضوء", "ليلاً ونهارًا", "عند غياب الضوء"], answer: 1, exp: "تتطلب عملية البناء الضوئي وجود طاقة ضوئية لذا تحدث نهارًا فقط." },
+            { q: "تتحول الطاقة ......... إلى طاقة ......... أثناء عملية البناء الضوئي.", options: ["الكيميائية / ضوئية", "الضوئية / كيميائية", "الحرارية / ضوئية", "الحركية / كيميائية"], answer: 1, exp: "تتحول الطاقة الضوئية للشمس إلى طاقة كيميائية تختزن في سكر الجلوكوز." },
+            { q: "تمتص جذور النبات من التربة المواد غير العضوية اللازمة للبناء الضوئي وهي .........", options: ["الجلوكوز والأكسجين", "الماء والأملاح المعدنية", "ثاني أكسيد الكربون", "النيتروجين فقط"], answer: 1, exp: "تمتص الجذور الماء والأملاح المعدنية من التربة كمدخلات للبناء الضوئي." },
+            { q: "تمتص مادة ......... الموجودة بالبلاستيدات الخضراء الطاقة الضوئية للشمس.", options: ["اليوريا", "الكلوروفيل", "الجلوكوز", "السليلوز"], answer: 1, exp: "الكلوروفيل هو الصبغة الخضراء المسؤولة عن امتصاص الطاقة الضوئية." },
+            { q: "ينتج عن عملية البناء الضوئي مادة عضوية هي ......... وغاز .........", options: ["الجلوكوز / CO2", "الجلوكوز / الأكسجين", "الماء / الأكسجين", "الأملاح / النيتروجين"], answer: 1, exp: "ينتج عن البناء الضوئي سكر الجلوكوز (مادة عضوية) وغاز الأكسجين." },
+            { q: "يُعد سكر الجلوكوز الناتج من البناء الضوئي مادة .........", options: ["غير عضوية", "عضوية", "معدنية", "غازية"], answer: 1, exp: "سكر الجلوكوز مادة عضوية يستفيد منها النبات كغذاء ومصدر للطاقة." },
+            { q: "تُسبب زيادة نسبة غاز ......... في الغلاف الجوي ظاهرة الاحتباس الحراري.", options: ["الأكسجين", "النيتروجين", "ثاني أكسيد الكربون", "الهيدروجين"], answer: 2, exp: "زيادة ثاني أكسيد الكربون تسبب ارتفاع حرارة الأرض وظاهرة الاحتباس الحراري." },
+            { q: "في تطبيق البناء الضوئي الاصطناعي، تُمد الأوراق الصناعية بغاز ......... لإنتاج وقود صديق للبيئة.", options: ["الأكسجين", "الهيدروجين", "ثاني أكسيد الكربون", "الكلور"], answer: 1, exp: "تمتص الأوراق الصناعية CO2 وتُمد بغاز الهيدروجين لإنتاج وقود نظيف." },
+            { q: "تحصل الكائنات الحية وحيدة الخلية على غاز الأكسجين اللازم للتنفس .........", options: ["عن طريق الرئتين", "مباشرةً من الوسط المحيط", "عن طريق الخياشيم", "القصيبات الهوائية"], answer: 1, exp: "تتبادل الكائنات وحيدة الخلية الغازات مباشرة مع الوسط المحيط بها." },
+            { q: "عضو التنفس في الحشرات مثل الجراد هو .........", options: ["الرئتان", "الخياشيم", "القصيبات الهوائية", "الجلد"], answer: 2, exp: "تتنفس الحشرات الهواء الجوي عن طريق القصيبات الهوائية." },
+            { q: "تتنفس الأسماك الأكسجين المذاب في الماء عن طريق .........", options: ["الرئتين", "الخياشيم", "الثغور", "القصيبات الهوائية"], answer: 1, exp: "تستخلص الأسماك الأكسجين المذاب في الماء بواسطة الخياشيم." },
+            { q: "تحصل البرمائيات كالضفادع البالغة على الأكسجين من الماء عن طريق ......... ومن الهواء عن طريق .........", options: ["الخياشيم / الجلد", "الجلد / الرئتين", "الرئتين / الجلد", "القصيبات / الرئتين"], answer: 1, exp: "تتنفس الضفادع البالغة في الماء عبر الجلد وفي الهواء عبر الرئتين." },
+            { q: "تحصل النباتات على غاز الأكسجين من الهواء الجوي عن طريق فتحات في الأوراق تُسمى .........", options: ["الخياشيم", "الثغور", "الجذور", "اللحاء"], answer: 1, exp: "الثغور فتحات دقيقة في أوراق النبات يتم من خلالها تبادل الغازات." },
+            { q: "يتحكم في فتح وغلق الثغور في أوراق النبات خلايا متخصصة تُسمى .........", options: ["الخلايا الجذعية", "الخلايا الحارسة", "الخلايا العصبية", "الخلايا العضلية"], answer: 1, exp: "الخلايا الحارسة تتحكم في فتح وغلق الثغور لتنظيم تبادل الغازات والماء." },
+            { q: "يقوم النبات بعملية التنفس .........", options: ["نهارًا فقط", "ليلاً فقط", "بصورة مستمرة ليلاً ونهارًا", "في الصيف فقط"], answer: 2, exp: "يتنفس النبات باستمرار ليلاً ونهارًا للحصول على الطاقة اللازمة لحياته." },
+            { q: "تُعد عمليتا البناء الضوئي والتنفس في النبات عمليتين .........", options: ["متطابقتين", "متعاكستين", "منفصلتين تمامًا", "تحدثان ليلاً فقط"], answer: 1, exp: "البناء الضوئي يستهلك CO2 وينتج O2، بينما التنفس يستهلك O2 وينتج CO2." },
+            { q: "تتم عملية التنفس الخلوي في خلايا حقيقيات النواة داخل عضية .........", options: ["البلاستيدة الخضراء", "الميتوكوندريا", "الفجوة العصارية", "جهاز جولجي"], answer: 1, exp: "الميتوكوندريا هي مركز إنتاج الطاقة وحدوث التنفس الخلوي." },
+            { q: "يتم في عملية التنفس الخلوي هدم سكر ......... في وجود غاز ......... لتحرير الطاقة.", options: ["اللاكتوز / النيتروجين", "الجلوكوز / الأكسجين", "الجلوكوز / CO2", "السكروز / الهيدروجين"], answer: 1, exp: "يتفاعل الجلوكوز مع الأكسجين في الميتوكوندريا لتحرير الطاقة." },
+            { q: "ينتج عن عملية التنفس الخلوي كل مما يلي، عدا .........", options: ["ثاني أكسيد الكربون", "الماء", "الطاقة", "غاز الأكسجين"], answer: 3, exp: "ينتج عن التنفس الخلوي ماء وثاني أكسيد الكربون وطاقة، ويُستهلك الأكسجين." },
+            { q: "وظيفة الميتوكوندريا في الخلية النباتية ......... لوظيفة البلاستيدات الخضراء.", options: ["مضادة ومعطلة", "متممة ومكملة", "غير مرتبطة", "مماثلة تمامًا"], answer: 1, exp: "تستخدم الميتوكوندريا نواتج البلاستيدات (الجلوكوز والأكسجين) لتحرير الطاقة." },
+            { q: "يتكون الجهاز الدوري في الإنسان من ثلاثة أجزاء رئيسية هي القلب والدم و.........", options: ["الرئتين", "الأوعية الدموية", "الكليتين", "العضلات"], answer: 1, exp: "يتكون الجهاز الدوري من القلب والأوعية الدموية والدم." },
+            { q: "أوعية دموية تخرج من القلب وتحمل معظمها الدم الغني بالأكسجين والغذاء المهضوم هي .........", options: ["الأوردة", "الشرايين", "أوعية الخشب", "أوعية اللحاء"], answer: 1, exp: "الشرايين أوعية دموية تخرج من القلب لتوزع الدم المؤكسج على خلايا الجسم." },
+            { q: "الأوعية الدموية التي تتجه من جميع أجزاء الجسم إلى القلب حاملةً الفضلات وCO2 هي .........", options: ["الشرايين", "الأوردة", "القصيبات", "الثغور"], answer: 1, exp: "الأوردة تعيد الدم المحمل بثاني أكسيد الكربون والفضلات إلى القلب." },
+            { q: "لا يُعد مسار الغذاء في الجهاز الهضمي مسارًا مغلقًا لأنه يبدأ بفتحة الفم وينتهي بفتحة .........", options: ["الأنف", "الشرج (الإست)", "الثغر", "الجلد"], answer: 1, exp: "الجهاز الهضمي أنبوبة مفتوحة الطرفين (فم وشرج) عكس الجهاز الدوري المغلق." },
+            { q: "عملية الدوران في الإنسان يقابلها في النبات عملية .........", options: ["البناء الضوئي", "النقل", "الإخراج", "الإحساس"], answer: 1, exp: "تتم عملية النقل في النبات عبر أنسجة الخشب واللحاء." },
+            { q: "ينقل نسيج ......... الماء والأملاح المعدنية من الجذور إلى باقي أجزاء النبات لأعلى فقط.", options: ["اللحاء", "الخشب", "البشرة", "العضلات"], answer: 1, exp: "أوعية الخشب تنقل الماء والأملاح من الجذور إلى الأوراق لأعلى فقط." },
+            { q: "ينقل نسيج ......... الغذاء الجاهز الناتج عن البناء الضوئي من الأوراق إلى باقي أجزاء النبات.", options: ["الخشب", "اللحاء", "الشرايين", "الأوردة"], answer: 1, exp: "ينقل اللحاء الغذاء المتكون في الأوراق إلى أعلى وإلى أسفل لكل أجزاء النبات." },
+            { q: "عند إزالة حلقة من القشرة الخارجية (اللحاء) من ساق نبات، يتجمع الغذاء في الجزء ......... منطقة القطع.", options: ["أسفل", "أعلى", "داخل", "بعيدًا عن"], answer: 1, exp: "انقطاع اللحاء يمنع نزول الغذاء القادم من الأوراق فيتراكم وينتفخ الجزء العلوي." },
+            { q: "عملية يتخلص فيها الكائن الحي من الفضلات الضارة الناتجة عن العمليات الحيوية هي .........", options: ["الهضم", "الإخراج", "النقل", "التغذية"], answer: 1, exp: "الإخراج هو تخلص الكائن الحي من الفضلات الضارة والمواد الزائدة عن حاجته." },
+            { q: "لا يُعتبر البراز (الطعام غير المهضوم) مادة إخراجية بالمفهوم العلمي لأنه .........", options: ["صلب القوام", "لا يعبر الأغشية البلازمية", "يخرج من الكليتين", "يحتوي على اليوريا"], answer: 1, exp: "الإخراج العلمي يشمل فقط المواد التي تعبر الأغشية البلازمية للخلايا." },
+            { q: "تُخرج الرئتان في الإنسان الفضلات الإخراجية في صورة ماء و......... مع هواء الزفير.", options: ["يوريا", "أملاح زائدة", "ثاني أكسيد الكربون", "غاز الأكسجين"], answer: 2, exp: "تتخلص الرئتان من الماء وثاني أكسيد الكربون مع هواء الزفير." },
+            { q: "تخرج النسبة الأكبر من مادة اليوريا من جسم الإنسان عن طريق .........", options: ["الرئتين", "الكليتين", "الغدد العرقية", "الأمعاء"], answer: 1, exp: "الكليتان تتخلصان من النسبة الأكبر من اليوريا مع البول، والقليل يخرج مع العرق." },
+            { q: "تشترك الكليتان والرئتان والجلد في التخلص من ......... الزائد عن حاجة الجسم.", options: ["اليوريا", "ثاني أكسيد الكربون", "الماء", "الأملاح"], answer: 2, exp: "الماء الزائد هو المادة المشتركة التي تخرج عبر الرئتين والكليتين والجلد." },
+            { q: "يُستخدم جهاز ......... لتنقية دم المصابين بالفشل الكلوي من السموم واليوريا.", options: ["التنفس الصناعي", "الغسيل الكلوي", "الميكروسكوب", "رسم القلب"], answer: 1, exp: "يقوم جهاز الغسيل الكلوي بدور الكلى في تنقية الدم عند توقفها." },
+            { q: "يتخلص النبات من الماء الزائد وغاز ثاني أكسيد الكربون عن طريق .........", options: ["الجذور", "الثغور", "نسيج الخشب", "الأزهار"], answer: 1, exp: "الثغور هي منفذ النبات للتخلص من بخار الماء الزائد والغازات." },
+            { q: "تتحرك الأميبا في الماء بواسطة .........", options: ["الأهداب", "السوط", "الأقدام الكاذبة", "الزعانف"], answer: 2, exp: "تتحرك الأميبا عن طريق امتدادات مؤقتة تسمى الأقدام الكاذبة." },
+            { q: "وسيلة الحركة في البراميسيوم هي .........", options: ["السوط", "الأقدام الكاذبة", "الأهداب", "الأرجل"], answer: 2, exp: "يحيط بجسم البراميسيوم أهداب دقيقة تساعده على الحركة." },
+            { q: "تتحرك اليوجلينا بواسطة .........", options: ["الأهداب", "السوط", "الأقدام الكاذبة", "الانزلاق"], answer: 1, exp: "تمتلك اليوجلينا سوطًا طويلاً تتحرك به في الماء." },
+            { q: "المسئول عن حركة جسم الإنسان هو الجهاز .........", options: ["الدوري", "الهضمي", "الحركي (العضلي الهيكلي)", "التنفسي"], answer: 2, exp: "يتعاون الجهاز العضلي والهيكلي معًا لإحداث الحركة في الإنسان." },
+            { q: "تتميز حركة النباتات بأنها حركة .........", options: ["انتقالية سريعة", "محدودة (موضعية)", "تشبه الأسماك", "معدومة تمامًا"], answer: 1, exp: "النباتات لا تنتقل من مكانها بل تتحرك حركة موضعية محدودة." },
+            { q: "تتفتح أزهار نبات ......... نهارًا وتُغلق ليلاً.", options: ["الفول", "الجازانيا", "القطن", "القمح"], answer: 1, exp: "أزهار الجازانيا تتفتح مع ضوء النهار وتنغلق ليلاً." },
+            { q: "تتدلى وريقات نبات ......... عند لمسها.", options: ["دوار الشمس", "المستحية", "الجازانيا", "البسلة"], answer: 1, exp: "تستجيب وريقات نبات المستحية للمس بالتدلي والانطباق." },
+            { q: "تتجه أزهار نبات ......... مع اتجاه الشمس عند شروقها وغروبها.", options: ["المستحية", "دوار الشمس", "الجازانيا", "البرسيم"], answer: 1, exp: "تتحرك أزهار دوار الشمس متتبعة حركة الشمس من الشروق للغروب." },
+            { q: "كل مما يلي يُعبر عن حركة الكائنات الحية، عدا .........", options: ["طيران العصافير", "انطلاق أسد لغزالة", "تفتح أزهار الجازانيا", "حركة الماء في الخشب"], answer: 3, exp: "حركة الماء والأملاح في الخشب تمثل نقل مواد غير حية وليست حركة كائن حي." },
+            { q: "المواد الإخراجية التي تخرج مع العرق من الغدد العرقية هي الماء والأملاح و.........", options: ["الجلوكوز", "اليوريا", "الأكسجين", "ثاني أكسيد الكربون"], answer: 1, exp: "يحتوي العرق على ماء وأملاح زائدة ونسبة قليلة من اليوريا." }
+        ],
+        3: [ // الدرس الثالث: الميكروبات (50 سؤالاً)
+            { q: "كائنات حية دقيقة لا يُرى معظمها بالعين المجردة وتنتشر حولنا وداخل أجسامنا تُسمى .........", options: ["الفيروسات", "الميكروبات", "الحشرات", "النباتات"], answer: 1, exp: "الميكروبات كائنات مجهرية دقيقة تنتشر في كل مكان وقد تكون نافعة أو ضارة." },
+            { q: "لا تُصنف ......... ضمن أوليات أو حقيقيات النواة لأنها لا تُعتبر من الكائنات الحية خارج العائل.", options: ["البكتيريا", "الفطريات", "الفيروسات", "البروتوزوا"], answer: 2, exp: "الفيروسات توجد في صورة غير حية خارج أجسام الكائنات ولا تتكاثر إلا داخلها." },
+            { q: "أي من الميكروبات التالية يُعد من أوليات النواة النافعة؟", options: ["فطر البنسيليوم", "فطر الخميرة", "بكتيريا العقد الجذرية", "السالمونيلا التيفية"], answer: 2, exp: "بكتيريا العقد الجذرية من البكتيريا النافعة أولية النواة." },
+            { q: "أي من الميكروبات التالية يُعد من حقيقيات النواة النافعة؟", options: ["بكتيريا التحلل", "بكتيريا اللبن الزبادي", "فطر الخميرة", "إنتاميبا هستولوتيكا"], answer: 2, exp: "فطر الخميرة وفطر البنسيليوم من الفطريات النافعة حقيقية النواة." },
+            { q: "يحتاج النبات الأخضر إلى عنصر ......... لتكوين البروتينات المستخدمة في نمو خلاياه وأنسجته.", options: ["الكربون", "النيتروجين", "الهيدروجين", "الأكسجين"], answer: 1, exp: "النيتروجين عنصر أساسي لبناء البروتينات في خلايا النبات." },
+            { q: "يتكون الغذاء الكربوهيدراتي في النبات من عناصر الكربون والهيدروجين و.........", options: ["النيتروجين", "الأكسجين", "الفوسفور", "الكالسيوم"], answer: 1, exp: "الكربوهيدرات مركبات عضوية تتكون من الكربون والهيدروجين والأكسجين." },
+            { q: "توجد البكتيريا العقدية في انتفاخات على جذور النباتات .........", options: ["الصحراوية", "البقولية", "المائية", "المتسلقة"], answer: 1, exp: "تعيش البكتيريا العقدية في عقد على جذور النباتات البقولية كالفول والبرسيم." },
+            { q: "تُوجد العقد الجذرية على جذور جميع النباتات التالية، عدا .........", options: ["الفول", "البرسيم", "الصبار", "البسلة"], answer: 2, exp: "الفول والبرسيم والبسلة نباتات بقولية أما الصبار فليس من البقوليات." },
+            { q: "تقوم بكتيريا العقد الجذرية بامتصاص غاز ......... من الهواء وتحويله لمركبات يستفيد منها النبات.", options: ["الأكسجين", "ثاني أكسيد الكربون", "النيتروجين", "الهيدروجين"], answer: 2, exp: "تثبت البكتيريا العقدية النيتروجين الجوي وتحوله إلى مركبات نيتروجينية يمتصها النبات." },
+            { q: "تقوم بكتيريا ......... بتحليل جذور البقوليات المتبقية في التربة إلى مركبات نيتروجينية تزيد خصوبتها.", options: ["اللبن الزبادي", "التحلل", "السالمونيلا", "العقد الجذرية"], answer: 1, exp: "تحلل بكتيريا التحلل الجذور وتعيد النيتروجين للتربة لزيادة خصوبتها." },
+            { q: "يُفضل المزارعون زراعة نبات ......... بعد حصاد نبات الفول في نفس التربة الزراعية.", options: ["البسلة", "البرسيم", "القطن", "الصبار"], answer: 2, exp: "لأن جذور الفول تترك التربة غنية بالمركبات النيتروجينية التي يحتاجها القطن." },
+            { q: "تُصنف بكتيريا التحلل ضمن الكائنات .........", options: ["حقيقية النواة الضارة", "أولية النواة النافعة", "عديدة الخلايا", "الفطريات"], answer: 1, exp: "بكتيريا التحلل بكتيريا نافعة تنتمي لأوليات النواة." },
+            { q: "الزبادي غذاء مهم للإنسان لأنه غني بعنصر ......... اللازم لسلامة العظام والأسنان.", options: ["الحديد", "الكالسيوم", "اليود", "الصوديوم"], answer: 1, exp: "الكالسيوم الموجود في الزبادي ضروري لبناء وسلامة العظام والأسنان." },
+            { q: "يحتوي الزبادي على نسبة عالية من ......... اللازم لبناء الجسم ونمو العضلات.", options: ["الدهون", "البروتين", "السكريات", "النشويات"], answer: 1, exp: "البروتين في الزبادي يبني أنسجة الجسم ويساعد في نمو العضلات." },
+            { q: "في خطوات صناعة الزبادي، يُغلى اللبن لمدة 25 دقيقة بهدف .........", options: ["تبخيره", "قتل البكتيريا الموجودة باللبن", "زيادة السكر فيه", "تجميده"], answer: 1, exp: "غلي اللبن يقتل أي ميكروبات أو بكتيريا ضارة موجودة فيه قبل التخمير." },
+            { q: "يُضاف الزبادي سابق التحضير إلى اللبن الدافئ عند درجة حرارة حوالي .........", options: ["100°C", "42°C", "0°C", "80°C"], answer: 1, exp: "درجة حرارة 42°C مناسبة لنشاط بكتيريا الزبادي دون أن تموت من الحرارة العالية." },
+            { q: "تعمل بكتيريا اللبن الزبادي على تحويل سكر ......... إلى حمض .........", options: ["الجلوكوز / الكبريتيك", "اللاكتوز / اللاكتيك", "السكروز / الهيدروكلوريك", "الفركتوز / الخليك"], answer: 1, exp: "تحول البكتيريا سكر اللبن (اللاكتوز) إلى حمض اللاكتيك." },
+            { q: "يُعطي حمض ......... للزبادي مذاقه الحامضي وقوامه المميزين.", options: ["الستريك", "اللاكتيك", "الأسكوربيك", "النيتريك"], answer: 1, exp: "حمض اللاكتيك هو المسؤول عن تخثر اللبن وإعطائه الطعم الحامضي المميز." },
+            { q: "يُحفظ الزبادي في الثلاجة بعد إعداده لـ .........", options: ["تنشيط البكتيريا", "وقف نشاط البكتيريا", "قتل البكتيريا بالغليان", "زيادة سكر اللاكتوز"], answer: 1, exp: "التبريد يوقف نشاط البكتيريا حتى لا تزيد الحموضة ويفسد طعم الزبادي." },
+            { q: "تُضاف ملعقة من السكر إلى المحلول الملحي عند تخليل الزيتون لـ .........", options: ["زيادة المرارة", "تغذية البكتيريا المفيدة", "قتل البكتيريا", "تغيير اللون للأزرق"], answer: 1, exp: "تتغذى البكتيريا المفيدة على السكر وتنتج حمض اللاكتيك الذي يقلل مرارة الزيتون." },
+            { q: "عملية تحول اللبن من صورته السائلة إلى شبه الصلبة بفعل البكتيريا تُسمى ......... اللبن.", options: ["تبخر", "تخثر", "تكثف", "تقطير"], answer: 1, exp: "تخثر اللبن هو تحوله لقوام متماسك شبه صلب بفعل حمض اللاكتيك." },
+            { q: "كل مما يلي من صفات بكتيريا اللبن الزبادي، عدا أنها .........", options: ["وحيدة الخلية", "أولية النواة", "تحتوي بلاستيدات خضراء", "لها جدار خلوي"], answer: 2, exp: "البكتيريا كائن وحيد الخلية أولي النواة ولا تحتوي على بلاستيدات خضراء." },
+            { q: "يُستخدم فطر ......... في صناعة جبن الريكفورت وإكسابه طعمه المميز وألوانه المتعددة.", options: ["الخميرة", "بنسيليوم ريكفورتي", "بنسيليوم نوتاتم", "عفن الخبز"], answer: 1, exp: "فطر بنسيليوم ريكفورتي هو المسؤول عن الطعم والألوان المميزة لجبن الريكفورت." },
+            { q: "اكتشف العالم الأسكتلندي ......... المضاد الحيوي البنسيلين عام 1928م.", options: ["لويس باستير", "ألكسندر فلمنج", "روبرت هوك", "مندل"], answer: 1, exp: "اكتشف ألكسندر فلمنج البنسيلين كأول مضاد حيوي فعال." },
+            { q: "يُستخلص المضاد الحيوي البنسيلين من فطر .........", options: ["بنسيليوم ريكفورتي", "بنسيليوم نوتاتم", "الخميرة", "عيش الغراب"], answer: 1, exp: "يفرز فطر بنسيليوم نوتاتم مادة البنسيلين التي توقف نمو البكتيريا." },
+            { q: "يُستخدم البنسيلين في مقاومة البكتيريا المسببة لأمراض مثل .........", options: ["الدوسنتاريا", "الدفتريا والتهاب اللوزتين", "البلهارسيا", "الأنفلونزا"], answer: 1, exp: "يعالج البنسيلين الأمراض البكتيرية مثل الدفتريا والتهاب اللوزتين." },
+            { q: "حصل العالم ألكسندر فلمنج على جائزة نوبل في الطب عام ......... تقديرًا لاكتشافه البنسيلين.", options: ["1928م", "1945م", "1950م", "1914م"], answer: 1, exp: "نال فلمنج جائزة نوبل في الطب عام 1945م." },
+            { q: "يرجع اختلاف وظيفة فطر بنسيليوم نوتاتم عن بنسيليوم ريكفورتي إلى اختلاف ......... كل منهما.", options: ["حجم", "تركيب", "مكان معيشة", "عدد خلايا"], answer: 1, exp: "اختلاف تركيب كل فطر أدى لاختلاف المادة التي ينتجها ووظيفته." },
+            { q: "يُصنف فطر الخميرة ضمن الكائنات .........", options: ["أولية النواة", "حقيقية النواة وحيدة الخلية", "عديدة الخلايا الضارة", "البكتيرية"], answer: 1, exp: "فطر الخميرة كائن وحيد الخلية ينتمي لحقيقيات النواة النافعة." },
+            { q: "يُستخدم فطر الخميرة في صناعة الخبز و.........", options: ["الجبن الريكفورت", "الكحول الإيثيلي", "الزبادي", "البنسيلين"], answer: 1, exp: "تُستخدم الخميرة في صناعة الخبز والكحول الإيثيلي." },
+            { q: "يُعد فطر الخميرة مصدرًا غنيًا بفيتامين ......... المركب.", options: ["(A)", "(B)", "(C)", "(D)"], answer: 1, exp: "الخميرة مصدر غني بفيتامين (B) المركب ومضادات الأكسدة." },
+            { q: "يتميز فطر الخميرة باحتوائه على مركبات مضادة لـ .........", options: ["الحموضة", "الأكسدة", "البنسيلين", "البروتينات"], answer: 1, exp: "تحتوي الخميرة على مركبات مضادة للأكسدة مفيدة لصحة الجسم." },
+            { q: "تستطيع الميكروبات الضارة الدخول إلى جسم الإنسان عن طريق .........", options: ["التنفس", "تناول الغذاء الملوث", "اختراق الجلد", "جميع ما سبق"], answer: 3, exp: "تدخل الميكروبات الجسم عبر الهواء أو الطعام الملوث أو الجروح بالجلد." },
+            { q: "يُسبب طفيل ......... مرض الدوسنتاريا (الزحار الأميبي).", options: ["السالمونيلا التيفية", "إنتاميبا هستولوتيكا", "البكتيريا العقدية", "البراميسيوم"], answer: 1, exp: "إنتاميبا هستولوتيكا طفيل من البروتوزوا يسبب الدوسنتاريا." },
+            { q: "يُصنف ميكروب إنتاميبا هستولوتيكا ضمن .........", options: ["البكتيريا أولية النواة", "البروتوزوا حقيقية النواة", "الفطريات", "الفيروسات"], answer: 1, exp: "هو كائن وحيد الخلية من البروتوزوا حقيقية النواة." },
+            { q: "يعيش طفيل إنتاميبا هستولوتيكا في ......... للمريض.", options: ["المعدة", "الأمعاء الغليظة", "الرئتين", "الكبد"], answer: 1, exp: "يستقر طفيل الدوسنتاريا في الأمعاء الغليظة للمريض." },
+            { q: "من أبرز أعراض مرض الدوسنتاريا .........", options: ["حمى تصل لـ 40 درجة", "إسهال متكرر مختلط بالدم", "طفح جلدي", "التهاب اللوزتين"], answer: 1, exp: "يتميز الزحار الأميبي بإسهال دموي متكرر وآلام بالمعدة وفقدان الشهية." },
+            { q: "يُعالج مرض الدوسنتاريا باستخدام .........", options: ["المضادات الحيوية", "مضادات الطفيليات", "البنسيلين", "الفيتامينات"], answer: 1, exp: "لأنه مرض طفيلي فإنه يُعالج باستخدام مضادات الطفيليات." },
+            { q: "يُسبب ميكروب ......... مرض حمى التيفويد.", options: ["إنتاميبا هستولوتيكا", "بكتيريا السالمونيلا التيفية", "فطر البنسيليوم", "بكتيريا التحلل"], answer: 1, exp: "حمى التيفويد مرض بكتيري تسببه بكتيريا السالمونيلا التيفية." },
+            { q: "تُصنف بكتيريا السالمونيلا التيفية ضمن .........", options: ["البروتوزوا", "أوليات النواة", "الفطريات", "حقيقيات النواة"], answer: 1, exp: "السالمونيلا بكتيريا لذا فهي من أوليات النواة." },
+            { q: "تعيش بكتيريا السالمونيلا التيفية في ......... للمريض.", options: ["الجهاز التنفسي", "القناة الهضمية", "الجهاز العصبي", "الجلد"], answer: 1, exp: "تعيش بكتيريا التيفويد في القناة الهضمية للمريض." },
+            { q: "من أعراض مرض حمى التيفويد ارتفاع درجة حرارة الجسم لتصل إلى .........", options: ["37°C", "40°C", "35°C", "45°C"], answer: 1, exp: "يسبب التيفويد حمى شديدة تصل فيها الحرارة إلى 40 درجة مئوية مع صداع وتعب." },
+            { q: "يُعالج مرض التيفويد باستخدام .........", options: ["مضادات الطفيليات", "المضادات الحيوية", "مضادات الأكسدة", "المسكنات فقط"], answer: 1, exp: "بما أنه مرض بكتيري فيُعالج بالمضادات الحيوية." },
+            { q: "ينتقل مرض التيفويد إلى الإنسان عن طريق .........", options: ["لدغ الحشرات", "تناول طعام أو شراب ملوث", "استنشاق الهواء فقط", "لمس الحيوانات"], answer: 1, exp: "ينتقل عبر تناول غذاء أو شرب مياه ملوثة ببكتيريا السالمونيلا." },
+            { q: "للمحافظة على الصحة والوقاية من أمراض الجهاز الهضمي يُنصح بشرب ما لا يقل عن ......... لتر من الماء يوميًا.", options: ["1", "3", "0.5", "10"], answer: 1, exp: "شرب 3 لتر من الماء النقي يوميًا من العادات الصحية الهامة." },
+            { q: "تكمن أهمية غسل الأسنان بالفرشاة بعد تناول الوجبات في .........", options: ["تبييض اللثة", "القضاء على بكتيريا الفم", "زيادة اللعاب الحمضي", "تقليل العطش"], answer: 1, exp: "يقضي تفريش الأسنان على البكتيريا المتراكمة بعد الطعام ويحمي الأسنان." },
+            { q: "من العادات الصحية للوقاية من التلوث الميكروبي للغذاء .........", options: ["ترك الطعام مكشوفًا", "غسل الخضروات والفاكهة", "شرب الماء غير النقي", "عدم غسل اليدين"], answer: 1, exp: "غسل الخضروات والفاكهة جيدًا يزيل الأتربة والميكروبات العالقة بها." },
+            { q: "تتشابه بكتيريا السالمونيلا التيفية مع بكتيريا العقد الجذرية في أنهما من .........", options: ["الميكروبات النافعة", "أوليات النواة", "حقيقيات النواة", "الفطريات"], answer: 1, exp: "كلاهما من البكتيريا لذا يتبعان أوليات النواة (أحدهما ضار والآخر نافع)." },
+            { q: "تختلف الدوسنتاريا عن التيفويد في .........", options: ["الانتقال بالغذاء الملوث", "نوع الميكروب والعلاج", "إصابة الجهاز الهضمي", "آلام المعدة والتعب"], answer: 1, exp: "الدوسنتاريا طفيلية تُعالج بمضادات الطفيليات، والتيفويد بكتيري يُعالج بالمضادات الحيوية." },
+            { q: "الميكروب الذي لاحظ فلمنج نموه باللون الأخضر على مزارع البكتيريا هو فطر .........", options: ["الخميرة", "بنسيليوم نوتاتم", "عفن الخبز", "عيش الغراب"], answer: 1, exp: "نمو فطر بنسيليوم نوتاتم الأخضر أدى لقتل البكتيريا المحيطة به واكتشاف البنسيلين." }
+        ]
+    };
+
+    // نصائح تربوية وأخلاقية
+    const moralAdvices = [
+        "«مَن سَلَكَ طَرِيقًا يَلْتَمِسُ فِيهِ عِلْمًا، سَهَّلَ اللَّهُ لَهُ بِهِ طَرِيقًا إِلَى الْجَنَّةِ»",
+        "احرص على بر والديك وطاعتهما، فبر الوالدين هو مفتاح التوفيق والنجاح في حياتك.",
+        "الصدق في القول والعمل من أعظم خصال المسلم، وهو طريق النجاة والبركة.",
+        "عامل زملاءك وإخوانك بحسن الخلق؛ «إنما بعثت لأتمم مكارم الأخلاق».",
+        "العلم النافع هو الذي يثمر عملاً صالحاً ونفعاً للناس وأثراً طيباً في الأرض.",
+        "من علامات توفيق الطالب استغلال وقته وتنظيمه والبعد عن التسويف والمماطلة."
+    ];
+
+    // مؤثرات صوتية
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        if (type === 'correct') {
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.18);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+            osc.start(now);
+            osc.stop(now + 0.25);
+        } else if (type === 'wrong') {
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.setValueAtTime(140, now + 0.2);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+            osc.start(now);
+            osc.stop(now + 0.35);
+        } else if (type === 'skip') {
+            osc.frequency.setValueAtTime(360, now);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        } else if (type === 'heart') {
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.3);
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+            osc.start(now);
+            osc.stop(now + 0.35);
+        }
+    }
+
+    // متغيرات الحالة
+    let playerName = "البطل";
+    let currentLevel = 1;
+    let score = 0;
+    let lives = 3;
+    let skips = 3;
+    let consecutiveCorrect = 0;
+    let currentRoundQuestions = [];
+    let currentQIndex = 0;
+    
+    // أفضل نتيجة مخزنة محلياً
+    let highScore = parseInt(localStorage.getItem('quiz_science_unit3_high_score') || '0', 10);
+    
+    // الديفولت بطيء: صعود البالونة خلال 16 ثانية
+    let speedPixelsPerSec = 28;
+    let balloons = [];
+    let animationId = null;
+    let lastTimestamp = 0;
+    let isShowingCorrectBalloon = false;
+
+    // مصفوفة لتسجيل الأخطاء مع شرحها
+    let currentRoundMistakes = [];
+
+    // سجل الأسئلة المطروحة لمنع التكرار
+    const servedQuestionsIndices = { 1: [], 2: [], 3: [] };
+    const balloonColors = ['#0a8f44', '#df5800', '#08803e', '#cc4e00', '#0b63b6'];
+
+    // قراءة أفضل نتيجة عند البداية
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("high-score-display").innerText = highScore;
+    });
+
+    function selectLevel(lvl) {
+        currentLevel = lvl;
+        document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(`btn-lvl-${lvl}`);
+        if (btn) btn.classList.add('active');
+        updateLiveLevelButtons();
+    }
+
+    function switchLevelLive(lvl) {
+        currentLevel = lvl;
+        updateLiveLevelButtons();
+        restartGame();
+    }
+
+    function updateLiveLevelButtons() {
+        for (let i = 1; i <= 3; i++) {
+            const btn = document.getElementById(`live-lvl-${i}`);
+            if (btn) {
+                if (i === currentLevel) btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle("dark-mode");
+    }
+
+    function setSpeed(pxPerSec, btnId) {
+        speedPixelsPerSec = pxPerSec;
+        document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(btnId).classList.add('active');
+    }
+
+    function initiateGameFlow() {
+        const inputVal = document.getElementById("player-name-input").value.trim();
+        playerName = inputVal ? inputVal : "البطل المتفوق";
+        document.getElementById("player-display").innerText = playerName;
+        document.getElementById("start-modal").style.display = "none";
+
+        const randomAdvice = moralAdvices[Math.floor(Math.random() * moralAdvices.length)];
+        document.getElementById("moral-advice").innerText = randomAdvice;
+        document.getElementById("wait-modal").style.display = "flex";
+
+        setTimeout(() => {
+            document.getElementById("wait-modal").style.display = "none";
+            restartGame();
+        }, 4000);
+    }
+
+    function getUniqueRandomQuestions(level) {
+        const allLevelQ = questionBank[level];
+        let availableIndices = [];
+        for (let i = 0; i < allLevelQ.length; i++) {
+            if (!servedQuestionsIndices[level].includes(i)) {
+                availableIndices.push(i);
+            }
+        }
+
+        if (availableIndices.length < 8) {
+            servedQuestionsIndices[level] = [];
+            availableIndices = allLevelQ.map((_, i) => i);
+        }
+
+        availableIndices.sort(() => 0.5 - Math.random());
+        const chosenIndices = availableIndices.slice(0, 8);
+        servedQuestionsIndices[level].push(...chosenIndices);
+
+        return chosenIndices.map(i => allLevelQ[i]);
+    }
+
+    function restartGame() {
+        score = 0;
+        lives = 3;
+        skips = 3;
+        consecutiveCorrect = 0;
+        currentQIndex = 0;
+        currentRoundMistakes = [];
+        isShowingCorrectBalloon = false;
+        
+        updateHUD();
+        updateLiveLevelButtons();
+        document.getElementById("end-modal").style.display = "none";
+
+        currentRoundQuestions = getUniqueRandomQuestions(currentLevel);
+
+        // تحميل السؤال الأول بعد استقرار DOM
+        setTimeout(() => {
+            loadQuestion();
+            if (animationId) cancelAnimationFrame(animationId);
+            lastTimestamp = performance.now();
+            animationId = requestAnimationFrame(gameLoop);
+        }, 50);
+    }
+
+    function updateHUD() {
+        document.getElementById("score-display").innerText = score;
+        document.getElementById("skips-display").innerText = skips;
+        document.getElementById("high-score-display").innerText = highScore;
+        let heartsStr = "";
+        for (let i = 0; i < lives; i++) heartsStr += "❤️";
+        document.getElementById("lives-display").innerText = heartsStr || "💔";
+        document.getElementById("q-counter").innerText = `السؤال ${currentQIndex + 1} / 8`;
+    }
+
+    function loadQuestion() {
+        if (currentQIndex >= 8 || lives <= 0) {
+            endGame();
+            return;
+        }
+
+        isShowingCorrectBalloon = false;
+        updateHUD();
+        const currentQ = currentRoundQuestions[currentQIndex];
+        document.getElementById("question-text").innerText = currentQ.q;
+
+        const playArea = document.getElementById("play-area");
+        playArea.innerHTML = "";
+        balloons = [];
+
+        // ضبط الأبعاد بأمان مع fallback
+        const areaWidth = playArea.clientWidth || 360;
+        const areaHeight = playArea.clientHeight || 450;
+        const optionsCount = currentQ.options.length;
+
+        // منع التداخل أفقياً بتقسيم المنطقة إلى أعمدة متساوية
+        const slotWidth = areaWidth / optionsCount;
+        const balloonWidth = Math.min(86, slotWidth - 6);
+
+        currentQ.options.forEach((optText, index) => {
+            const b = document.createElement("div");
+            b.className = "balloon";
+            b.style.width = `${balloonWidth}px`;
+            
+            // تصغير الخط للنصوص الطويلة لتجنب خروج النص
+            if (optText.length > 18) {
+                b.classList.add("text-long");
+            }
+            
+            b.innerText = optText;
+            const color = balloonColors[index % balloonColors.length];
+            b.style.background = color;
+
+            // تمركز كل بالونة في خانتها بدقة لمنع التداخل
+            const xPos = (index * slotWidth) + ((slotWidth - balloonWidth) / 2);
+            // توزيع ارتفاع البدء بفارق بسيط جداً
+            const yPos = areaHeight + 10 + (index * 12);
+
+            b.style.left = `${Math.round(xPos)}px`;
+            b.style.top = `${Math.round(yPos)}px`;
+
+            b.onclick = () => handleChoice(index, b);
+            playArea.appendChild(b);
+
+            balloons.push({
+                element: b,
+                x: xPos,
+                y: yPos,
+                speedMultiplier: 0.95 + (index * 0.03),
+                popped: false
+            });
+        });
+    }
+
+    function gameLoop(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const delta = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
+        lastTimestamp = timestamp;
+
+        if (!isShowingCorrectBalloon) {
+            let allOffScreen = true;
+
+            balloons.forEach(b => {
+                if (!b.popped) {
+                    b.y -= speedPixelsPerSec * b.speedMultiplier * delta;
+                    b.element.style.top = `${b.y}px`;
+                    if (b.y + 130 > 0) {
+                        allOffScreen = false;
+                    }
+                }
+            });
+
+            // عندما تخرج كل البالونات دون إجابة (انتهاء الوقت)
+            if (allOffScreen && balloons.length > 0) {
+                handleMissedQuestion();
+                return;
+            }
+        }
+
+        animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // إظهار البالونة الصحيحة متوهجة في وسط الشاشة عند الخطأ أو انتهاء الوقت
+    function showGlowingCorrectBalloon(onFinish) {
+        isShowingCorrectBalloon = true;
+        const currentQ = currentRoundQuestions[currentQIndex];
+        const correctText = currentQ.options[currentQ.answer];
+        const playArea = document.getElementById("play-area");
+
+        // إخفاء بالونات الخيارات الجارية
+        balloons.forEach(b => {
+            if (b.element) b.element.style.display = "none";
+        });
+
+        // إنشاء بالونة الإجابة الصحيحة المتوهجة
+        const glowB = document.createElement("div");
+        glowB.className = "center-glowing-balloon";
+        glowB.innerHTML = `
+            <span class="center-glowing-balloon-label">الإجابة الصحيحة ✨</span>
+            <span>${correctText}</span>
+        `;
+        playArea.appendChild(glowB);
+
+        setTimeout(() => {
+            glowB.remove();
+            isShowingCorrectBalloon = false;
+            onFinish();
+        }, 1600);
+    }
+
+    function recordMistake(currentQ, studentAnswer = "فاتك الوقت ولم تختر") {
+        currentRoundMistakes.push({
+            question: currentQ.q,
+            correct: currentQ.options[currentQ.answer],
+            student: studentAnswer,
+            explanation: currentQ.exp
+        });
+    }
+
+    function handleChoice(chosenIndex, element) {
+        if (isShowingCorrectBalloon) return;
+
+        const currentQ = currentRoundQuestions[currentQIndex];
+        element.classList.add("balloon-pop");
+
+        if (chosenIndex === currentQ.answer) {
+            playBeep('correct');
+            score += 10;
+            consecutiveCorrect++;
+            if (consecutiveCorrect === 4) {
+                lives++;
+                playBeep('heart');
+                consecutiveCorrect = 0;
+            }
+            updateHUD();
+
+            setTimeout(() => {
+                currentQIndex++;
+                loadQuestion();
+            }, 220);
+        } else {
+            // اختيار خاطئ
+            playBeep('wrong');
+            lives--;
+            consecutiveCorrect = 0;
+            updateHUD();
+            recordMistake(currentQ, currentQ.options[chosenIndex]);
+
+            showGlowingCorrectBalloon(() => {
+                if (lives <= 0) {
+                    endGame();
+                } else {
+                    currentQIndex++;
+                    loadQuestion();
+                }
+            });
+        }
+    }
+
+    function handleMissedQuestion() {
+        const currentQ = currentRoundQuestions[currentQIndex];
+        lives--;
+        consecutiveCorrect = 0;
+        playBeep('wrong');
+        updateHUD();
+        recordMistake(currentQ, "انتهى الوقت وخرجت البالونات ⏱️");
+
+        showGlowingCorrectBalloon(() => {
+            if (lives <= 0) {
+                endGame();
+            } else {
+                currentQIndex++;
+                loadQuestion();
+            }
+        });
+    }
+
+    // زر التخطي: مسموح به في أي سؤال بما فيه السؤال الثامن
+    function skipQuestion() {
+        if (skips > 0 && currentQIndex < 8 && !isShowingCorrectBalloon) {
+            skips--;
+            playBeep('skip');
+            currentQIndex++;
+            loadQuestion();
+        }
+    }
+
+    function getLevelTitle(lvl) {
+        if (lvl === 1) return "الدرس الأول: الخلايا والحياة";
+        if (lvl === 2) return "الدرس الثاني: الصفات العامة للكائنات الحية";
+        return "الدرس الثالث: الميكروبات";
+    }
+
+    function endGame() {
+        if (animationId) cancelAnimationFrame(animationId);
+
+        // تخزين ومقارنة أفضل نتيجة محلياً
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('quiz_science_unit3_high_score', highScore.toString());
+        }
+
+        document.getElementById("end-modal").style.display = "flex";
+        document.getElementById("final-player-name").innerText = playerName;
+        document.getElementById("final-score").innerText = score;
+        document.getElementById("final-high-score").innerText = highScore;
+        document.getElementById("final-level-name").innerText = getLevelTitle(currentLevel);
+
+        const title = document.getElementById("end-title");
+        const phrase = document.getElementById("motivational-phrase");
+        const nextBtn = document.getElementById("btn-next-level");
+
+        if (currentLevel >= 3) {
+            nextBtn.innerText = "ختام الوحدة (أعد المستوى 1)";
+        } else {
+            nextBtn.innerText = `الانتقال للمستوى ${currentLevel + 1} ⏭️`;
+        }
+
+        // تقييم النتيجة
+        if (score >= 70) {
+            title.innerText = "عبقري متألق من طراز رفيع! 🏆";
+            phrase.innerText = `ما شاء الله يا ${playerName}! إتقان مذهل للمفاهيم ونيل الدرجات العُلا، أداء يشرف ويدعو للفخر.`;
+        } else if (score >= 50) {
+            title.innerText = "أداء ممتاز وبطل متميز! 🌟";
+            phrase.innerText = `أحسنت صنعاً يا ${playerName}! فهمك للمادة رائع وقوي، وبقليل من التركيز ستكتسح الدرجة النهائية كاملة.`;
+        } else if (score >= 30) {
+            title.innerText = "محاولة طيبة وواعدة! 👍";
+            phrase.innerText = `جهد مبارك يا ${playerName}، كل محاولة تزيدك فهماً وحفظاً، كرر التجربة وستصل للقمة بإذن الله.`;
+        } else {
+            title.innerText = "استمر ولا تيأس! 💪";
+            phrase.innerText = `يا ${playerName}، كبار العلماء تعثروا وتعلموا من أخطائهم! راجع الدرس بتمعن وجرب من جديد وستبهر الجميع.`;
+        }
+
+        // عرض الأخطاء وتفسيرها
+        const mistakesBox = document.getElementById("mistakes-container");
+        const mistakesList = document.getElementById("mistakes-list");
+        mistakesList.innerHTML = "";
+
+        if (currentRoundMistakes.length > 0) {
+            mistakesBox.style.display = "block";
+            currentRoundMistakes.forEach((m, idx) => {
+                const item = document.createElement("div");
+                item.className = "mistake-item";
+                item.innerHTML = `
+                    <div class="mistake-q">س${idx + 1}: ${m.question}</div>
+                    <div class="mistake-ans">✅ الإجابة الصحيحة: ${m.correct}</div>
+                    <div class="mistake-exp">💡 <b>الشرح والحل:</b> ${m.explanation}</div>
+                `;
+                mistakesList.appendChild(item);
+            });
+        } else {
+            mistakesBox.style.display = "block";
+            mistakesList.innerHTML = `<div style="text-align:center; color: var(--accent-green); font-weight: bold; padding: 6px;">تبارك الله! لم ترتكب أي خطأ في هذا الدور 🎯</div>`;
+        }
+    }
+
+    function retryCurrentLevel() {
+        restartGame();
+    }
+
+    function goToNextLevel() {
+        if (currentLevel < 3) {
+            currentLevel++;
+        } else {
+            currentLevel = 1;
+        }
+        selectLevel(currentLevel);
+        restartGame();
+    }
+
+    function shareWhatsApp() {
+        const text = encodeURIComponent(`🎈 حقق البطل (${playerName}) نتيجة ${score}/80 في لعبة العلوم (تحدي ${getLevelTitle(currentLevel)})! ✨\nإشراف وتصميم: أ/ عبد الرحمن عبد الله 📞 01021779644`);
+        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    }
+
+    function shareFacebook() {
+        const url = encodeURIComponent(window.location.href);
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    }
+
+    function takeScreenshotAndShare() {
+        const endCard = document.getElementById("end-card-content");
+        if (window.html2canvas) {
+            html2canvas(endCard, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `نتيجة_${playerName}_المستوى_${currentLevel}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                alert("تم حفظ لقطة شاشة بطاقتك وأخطائك بنجاح! يمكنك مشاركتها الآن.");
+            });
+        } else {
+            alert("ميزة لقطة الشاشة تتطلب اتصالاً بالإنترنت لتحميل المكتبة.");
+        }
+    }
+</script>
+</body>
+</html>
